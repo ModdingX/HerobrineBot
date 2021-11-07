@@ -1,4 +1,6 @@
 /node_modules
 /.idea
 *.js
-/tokens.env
+/tokens*.env
+/botconfig*.json
+!/botconfig.json
