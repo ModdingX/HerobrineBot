@@ -9,13 +9,17 @@ export async function reloadSlashCommands(auth: DiscordAuth, guild: string): Pro
         const asyncReaddir = promisify(fs.readdir)
         const commandFiles = (await asyncReaddir('./commands')).filter(f => f.endsWith('.js'));
         
+        const commands = []
+        
         for (const file of commandFiles) {
             const command = require(`./commands/${file}`);
-            // Internal stuff but it works.
-            // @ts-ignore
-            await auth.client.api.applications(auth.clientId).guilds(guild).commands.post({data: command.data.toJSON()})
+            commands.push(command.data.toJSON())
         }
-        
+
+        // Internal stuff but it works.
+        // @ts-ignore
+        await auth.client.api.applications(auth.clientId).guilds(guild).commands.put({data: commands})
+
         console.log('Successfully reloaded application (/) commands.');
         return true
 	} catch (error) {
