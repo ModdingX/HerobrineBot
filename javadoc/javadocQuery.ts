@@ -184,7 +184,7 @@ function createMethodDocText(cls: JavaClass, baseURL: string, method: JavaExecut
 
 function javadocLink(cls: JavaClass, baseURL: string): string {
     const url = (baseURL.endsWith('/') ? baseURL : baseURL + '/') + cls.name.replace('$', '.')
-    return `[Javadoc of ${cls.sourceName}](${url})`
+    return `[Javadoc of ${cls.simpleName}](${url})`
 }
 
 function createClassEmbed(data: JavaClass, baseURL: string): MessageEmbed {
