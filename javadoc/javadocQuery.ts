@@ -135,7 +135,7 @@ function shortText(result: SearchResultEntry): string {
     }
 }
 
-function createDocText(doc: Javadoc | undefined): [string, EmbedFieldData[]] {
+function createDocText(cls: JavaClass, baseURL: string, doc: Javadoc | undefined): [string, EmbedFieldData[]] {
     if (doc != undefined) {
         const description = `\n${turndown.turndown(doc.text)}`
         const fields: EmbedFieldData[] = []
@@ -154,14 +154,14 @@ function createDocText(doc: Javadoc | undefined): [string, EmbedFieldData[]] {
                 }
             }
         }
-        return [description, fields]
+        return [description + '\n' + javadocLink(cls, baseURL), fields]
     } else {
-        return ['', []]
+        return [javadocLink(cls, baseURL), []]
     }
 }
 
-function createMethodDocText(method: JavaExecutable): [string, EmbedFieldData[]] {
-    const [ docText, fields ] = createDocText(method.doc)
+function createMethodDocText(cls: JavaClass, baseURL: string, method: JavaExecutable): [string, EmbedFieldData[]] {
+    const [ docText, fields ] = createDocText(cls, baseURL, method.doc)
     if (method.doc != undefined) {
         const paramFields: EmbedFieldData[] = []
         for (const param of method.parameters) {
@@ -182,15 +182,20 @@ function createMethodDocText(method: JavaExecutable): [string, EmbedFieldData[]]
     return [ docText, fields ]
 }
 
+function javadocLink(cls: JavaClass, baseURL: string): string {
+    const url = (baseURL.endsWith('/') ? baseURL : baseURL + '/') + cls.name.replace('$', '.')
+    return `[Javadoc of ${cls.sourceName}](${url})`
+}
+
 function createClassEmbed(data: JavaClass, baseURL: string): MessageEmbed {
     let description = `Name: \`${data.sourceName}\`\n`
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     if (data.superClass != undefined) description += `Extends: \`${data.superClass.signature}\`\n`
     if (data.interfaces != undefined && data.interfaces.length > 0) description += `Implements: ${data.interfaces.map(itf => `\`${itf.signature}\``).join(", ")}\n`
     if (data.enumValues != undefined && data.enumValues.length > 0) description += `Enum Values: ${data.enumValues.map(v => `\`${v}\``).join(", ")}\n`
-    const [docText, fields] = createDocText(data.doc)
+    const [docText, fields] = createDocText(data, baseURL, data.doc)
     description += docText
-    return dcu.embedList("Class " + javadocLink(baseURL, data, data.simpleName), description, IMAGE_URL, fields)
+    return dcu.embedList("Class " + data.simpleName, description, IMAGE_URL, fields)
 }
 
 function createFieldEmbed(data: JavaField, cls: JavaClass, baseURL: string): MessageEmbed {
@@ -198,18 +203,18 @@ function createFieldEmbed(data: JavaField, cls: JavaClass, baseURL: string): Mes
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.type.name}\`\n`
     if (data.constant != undefined) description += `Value: \`${data.constant}\`\n`
-    const [docText, fields] = createDocText(data.doc)
+    const [docText, fields] = createDocText(cls, baseURL, data.doc)
     description += docText
-    return dcu.embedList("Field " + javadocLink(baseURL, cls, cls.simpleName + "#" + data.name), description, IMAGE_URL, fields)
+    return dcu.embedList("Field " + cls.simpleName + "#" + data.name, description, IMAGE_URL, fields)
 }
 
 function createConstructorEmbed(data: JavaConstructor, cls: JavaClass, baseURL: string): MessageEmbed {
     let description = `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.typeId}\`\n`
     if (data.throws != undefined && data.throws.length > 0) description += `Throws: ${data.throws.map(v => `\`${v.name}\``).join(', ')}\n`
-    const [docText, fields] = createMethodDocText(data)
+    const [docText, fields] = createMethodDocText(cls, baseURL, data)
     description += docText
-    return dcu.embedList("Constructor " + javadocLink(baseURL, cls, cls.simpleName), description, IMAGE_URL, fields)
+    return dcu.embedList("Constructor " + cls.simpleName, description, IMAGE_URL, fields)
 
 }
 
@@ -218,12 +223,7 @@ function createMethodEmbed(data: JavaMethod, cls: JavaClass, baseURL: string): M
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.typeId}\`\n`
     if (data.throws != undefined && data.throws.length > 0) description += `Throws: ${data.throws.map(v => `\`${v.name}\``).join(', ')}\n`
-    const [docText, fields] = createMethodDocText(data)
+    const [docText, fields] = createMethodDocText(cls, baseURL, data)
     description += docText
-    return dcu.embedList("Method " + javadocLink(baseURL, cls, cls.simpleName + "#" + data.name), description, IMAGE_URL, fields)
-}
-
-function javadocLink(baseURL: string, cls: JavaClass, text: string): string {
-    const url = (baseURL.endsWith('/') ? baseURL : baseURL + '/') + cls.name.replace('$', '.')
-    return `[${text}](${url})`
+    return dcu.embedList("Method " + cls.simpleName + "#" + data.name, description, IMAGE_URL, fields)
 }
