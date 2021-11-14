@@ -30,8 +30,8 @@ export function embedList(title: string, description: string | null, image: stri
         if (fields.length != 0) {
             embed.addFields(fields)
         }
-        embed.setColor('#FFFF00')
+        embed.setColor('#34C200')
         embed.setTimestamp()
-        embed.setFooter('Bot by noeppi_noeppi', 'https://avatars.githubusercontent.com/u/63002502?s=400&u=b78c86cb9c60a2aba648bd01b4be77469c04913e&v=4');
+        embed.setFooter('Herobrine', 'https://cdn.discordapp.com/avatars/905189688770428959/3a69c647d31fc557281ae5a0aa2c16e1.webp');
         return embed;
 }
