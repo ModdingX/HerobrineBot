@@ -3,11 +3,13 @@ import {textChannel} from "./discordUtil";
 import {BotConfig} from "./botConfig";
 import {addReactionRole} from "./discordReaction";
 import {startJavadocQuery} from "../javadoc/javadocQuery";
+import {startPortalHandler} from "../to/portalHandler";
 
 export async function startDiscordBot(discord: DiscordClient, config: BotConfig): Promise<void> {
     const guild: Guild = await discord.guilds.fetch(config.guild);
     
     startJavadocQuery(discord, config.javadoc_url)
+    startPortalHandler(discord)
     
     const roleChannel = await textChannel(discord, config.role_channel);
     const roleMessage = await roleChannel.messages.fetch(config.role_message)

@@ -14,13 +14,15 @@ export async function textChannel(discord: DiscordClient, id: Snowflake | undefi
     return channel as TextChannel
 }
 
-export function embed(title: string, description: string | null, image: string | null): MessageEmbed {
+export function embed(title: string | null, description: string | null, image: string | null): MessageEmbed {
     return embedList(title, description, image, [])
 }
 
-export function embedList(title: string, description: string | null, image: string | null, fields: Array<EmbedFieldData>): MessageEmbed {
+export function embedList(title: string | null, description: string | null, image: string | null, fields: Array<EmbedFieldData>): MessageEmbed {
         const embed = new MessageEmbed()
-        embed.setTitle(title)
+        if (title != null) {
+            embed.setTitle(title)
+        }
         if (description != null) {
             embed.setDescription(description)
         }

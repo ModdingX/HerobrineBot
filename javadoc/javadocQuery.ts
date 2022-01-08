@@ -15,7 +15,6 @@ export function startJavadocQuery(client: DiscordClient, baseURL: string): void 
     let nextId = 0
     const resultCache: Record<number, SearchResultEntry> = {}
     
-    
     client.on('interactionCreate', async interaction => {
         if (!interaction.isCommand()) return;
         if (interaction.commandName == 'jd') {
