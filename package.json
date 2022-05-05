@@ -1,20 +1,20 @@
 {
-  "name": "bingobot",
+  "name": "herobrine",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "tsc"
   },
-  "author": "noeppi_noeppi",
+  "author": "ModdingX",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types/node": "16.11.6",
-    "@types/node-fetch": "2.5.12",
-    "discord.js": "13.3.1",
-    "dotenv": "10.0.0",
+    "@types/node": "16.11.7",
+    "@types/node-fetch": "2.6.1",
+    "discord.js": "13.6.0",
+    "dotenv": "16.0.0",
     "node-fetch": "2.6.7",
     "turndown": "7.1.1",
-    "typescript": "4.4.4"
+    "typescript": "4.6.4"
   }
 }

@@ -1,4 +1,12 @@
-import {Client as DiscordClient, EmbedFieldData, MessageEmbed, Snowflake, TextChannel} from "discord.js";
+import {Client as DiscordClient, EmbedFieldData, Interaction, MessageEmbed, Snowflake, TextChannel} from "discord.js";
+
+export async function tryTextChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<TextChannel | null> {
+  try {
+    return await textChannel(discord, id)
+  } catch (err) {
+    return null;
+  }
+}
 
 export async function textChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<TextChannel> {
     if (id == undefined) {
@@ -34,6 +42,19 @@ export function embedList(title: string | null, description: string | null, imag
         }
         embed.setColor('#34C200')
         embed.setTimestamp()
-        embed.setFooter('Herobrine', 'https://cdn.discordapp.com/avatars/905189688770428959/3a69c647d31fc557281ae5a0aa2c16e1.webp');
+        embed.setFooter({
+          text: 'Herobrine',
+          iconURL: 'https://cdn.discordapp.com/avatars/905189688770428959/3a69c647d31fc557281ae5a0aa2c16e1.webp'
+        })
         return embed;
+}
+
+export async function sendError(interaction: Interaction, text: string): Promise<void> {
+  if (interaction.isApplicationCommand()) {
+    await interaction.reply({
+      content: text,
+      ephemeral: true,
+      fetchReply: true
+    })
+  }
 }

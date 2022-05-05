@@ -11,11 +11,23 @@ export function startPortalHandler(client: DiscordClient): void {
             try {
                 const channelId = interaction.options.getChannel('channel')
                 if (channelId != null) {
-                    const fromChannel = interaction.channel
-                    if (fromChannel != null && fromChannel.type == 'GUILD_TEXT') {
-                        const toChannel = await dcu.textChannel(client, channelId.id);
-                        await handleToCommand(client, interaction, fromChannel, toChannel)
+                    if (channelId.id == interaction.channelId) {
+                        await dcu.sendError(interaction, 'You\'re already in that channel.')
+                    } else {
+                        const fromChannel = interaction.channelId == null ? null : await dcu.tryTextChannel(client, interaction.channelId);
+                        if (fromChannel != null) {
+                            const toChannel = await dcu.textChannel(client, channelId.id);
+                            if (toChannel == null) {
+                                await dcu.sendError(interaction, 'Can\'t redirect into that channel')
+                            } else {
+                                await handleToCommand(client, interaction, fromChannel, toChannel)
+                            }
+                        } else {
+                            await dcu.sendError(interaction, 'Internal error.')
+                        }
                     }
+                } else {
+                    await dcu.sendError(interaction, 'Please supply a channel.')
                 }
             } catch (err) {
                 console.log(err)
