@@ -7,4 +7,4 @@ export const data = new SlashCommandBuilder()
 		option.setName('search')
 			.setDescription('Javadoc search term.')
 			.setRequired(true)
-    );
+    )

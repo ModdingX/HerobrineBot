@@ -9,4 +9,4 @@ export const data = new SlashCommandBuilder()
             .addChannelType(ChannelType.GuildText)
             .setDescription('Channel to continue in.')
             .setRequired(true)
-    );
+    )
