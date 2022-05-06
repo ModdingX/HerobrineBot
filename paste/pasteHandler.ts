@@ -59,7 +59,7 @@ function findTextToPaste(msg: Message): PasteText | 'too_large' | null {
   for (const attachment of msg.attachments.values()) {
     const name = attachment.name
     if (name != null && ALLOWED_SUFFIXES.some(suffix => name.toLowerCase().endsWith(suffix))) {
-      if (attachment.size <= (100 * 1024)) {
+      if (attachment.size > (100 * 1024)) {
         defaultReturn = 'too_large'
       } else {
         return {
