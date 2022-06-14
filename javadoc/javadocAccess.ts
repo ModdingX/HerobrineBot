@@ -59,36 +59,40 @@ export class JavadocAccess {
     }
     
     async search(term: string): Promise<SearchResult> {
+        function emptyToUndefined(arg: string): string | undefined {
+            return arg == '' ? undefined : arg
+        }
+        
         const parts: [string | undefined, string | undefined][] = []
         if (term.startsWith('#')) {
             // Simple: no class part
             parts.push([
                 undefined,
-                term.substring(1)
+                emptyToUndefined(term.substring(1))
             ])
         } else if (term.includes('#')) {
             // Simple: class is the part before the #, member behind
             parts.push([
-                term.substring(0, term.indexOf('#')).replace('$', '.'),
-                term.substring(term.indexOf('#') + 1)
+                emptyToUndefined(term.substring(0, term.indexOf('#')).replace('$', '.')),
+                emptyToUndefined(term.substring(term.indexOf('#') + 1))
             ])
         } else if (term.includes('.')) {
             // Last part can be part of class or member
             parts.push([
-                term.substring(0, term.lastIndexOf('.')).replace('$', '.'),
-                term.substring(term.lastIndexOf('.') + 1)
+                emptyToUndefined(term.substring(0, term.lastIndexOf('.')).replace('$', '.')),
+                emptyToUndefined(term.substring(term.lastIndexOf('.') + 1))
             ], [
-                term.replace('$', '.'),
+                emptyToUndefined(term.replace('$', '.')),
                 undefined
             ])
         } else {
             // Either class or member
             parts.push([
-                term.replace('$', '.'),
+                emptyToUndefined(term.replace('$', '.')),
                 undefined
             ], [
                 undefined,
-                term
+                emptyToUndefined(term)
             ])
         }
         return await this.searchParts(parts)
