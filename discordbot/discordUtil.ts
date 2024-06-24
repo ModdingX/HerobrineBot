@@ -1,4 +1,4 @@
-import {Client as DiscordClient, EmbedFieldData, Interaction, MessageEmbed, Snowflake, TextChannel} from "discord.js";
+import {APIEmbed, APIEmbedField, ChannelType, Client as DiscordClient, EmbedBuilder, Interaction, Snowflake, TextChannel} from "discord.js";
 
 export async function tryTextChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<TextChannel | null> {
   try {
@@ -16,41 +16,41 @@ export async function textChannel(discord: DiscordClient, id: Snowflake | undefi
     if (channel == null) {
         throw new Error("Discord channel not found: " + channel)
     }
-    if (channel.type != "GUILD_TEXT") {
+    if (channel.type != ChannelType.GuildText) {
         throw new Error("Discord channel is not a text channel: " + channel)
     }
     return channel as TextChannel
 }
 
-export function embed(title: string | null, description: string | null, image: string | null): MessageEmbed {
+export function embed(title: string | null, description: string | null, image: string | null): APIEmbed {
     return embedList(title, description, image, [])
 }
 
-export function embedList(title: string | null, description: string | null, image: string | null, fields: Array<EmbedFieldData>): MessageEmbed {
-        const embed = new MessageEmbed()
+export function embedList(title: string | null, description: string | null, image: string | null, fields: Array<APIEmbedField>): APIEmbed {
+        const builder = new EmbedBuilder()
         if (title != null) {
-            embed.setTitle(title)
+            builder.setTitle(title)
         }
         if (description != null) {
-            embed.setDescription(description)
+            builder.setDescription(description)
         }
         if (image != null) {
-            embed.setThumbnail(image)
+            builder.setThumbnail(image)
         }
         if (fields.length != 0) {
-            embed.addFields(fields)
+            builder.addFields(fields)
         }
-        embed.setColor('#34C200')
-        embed.setTimestamp()
-        embed.setFooter({
+        builder.setColor('#34C200')
+        builder.setTimestamp()
+        builder.setFooter({
           text: 'Herobrine',
           iconURL: 'https://cdn.discordapp.com/avatars/905189688770428959/3a69c647d31fc557281ae5a0aa2c16e1.webp'
         })
-        return embed;
+        return builder.toJSON();
 }
 
 export async function sendError(interaction: Interaction, text: string): Promise<void> {
-  if (interaction.isApplicationCommand()) {
+  if (interaction.isCommand()) {
     await interaction.reply({
       content: text,
       ephemeral: true,

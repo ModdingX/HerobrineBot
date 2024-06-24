@@ -9,7 +9,7 @@ const ALLOWED_SUFFIXES = [ '.txt', '.log', '.cfg', '.json', '.json5', '.iml', '.
 
 export function startPasteHandler(client: DiscordClient): void {
   client.on('interactionCreate', async interaction => {
-    if (!interaction.isMessageContextMenu()) return;
+    if (!interaction.isMessageContextMenuCommand()) return;
     if (interaction.commandName == 'Create_Paste') {
       try {
         const channel = await dcu.tryTextChannel(client, interaction.channelId)

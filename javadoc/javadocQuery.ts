@@ -1,6 +1,14 @@
 import {
-    Client as DiscordClient, EmbedFieldData,
-    MessageActionRow, MessageButton, MessageEmbed, MessageOptions
+    APIActionRowComponent,
+    APIEmbed,
+    APIEmbedField,
+    APIMessageActionRowComponent,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    Client as DiscordClient,
+    InteractionUpdateOptions,
+    MessageActionRowComponentBuilder
 } from "discord.js";
 
 import {JavadocAccess, SearchResultEntry} from "./javadocAccess";
@@ -16,7 +24,7 @@ export function startJavadocQuery(client: DiscordClient, baseURL: string): void 
     const resultCache: Record<number, SearchResultEntry> = {}
     
     client.on('interactionCreate', async interaction => {
-        if (!interaction.isCommand()) return;
+        if (!interaction.isChatInputCommand()) return;
         if (interaction.commandName == 'jd') {
             await interaction.deferReply({
                 ephemeral: false
@@ -39,17 +47,17 @@ export function startJavadocQuery(client: DiscordClient, baseURL: string): void 
                 if (result.results.length == 1) {
                     await sendFinalResult(result.results[0], baseURL, msg => interaction.editReply(msg))
                 } else {
-                    const buttonRows: MessageActionRow[] = []
+                    const buttonRows: APIActionRowComponent<APIMessageActionRowComponent>[] = []
                     for (const entry of result.results) {
                         const n = nextId++
                         resultCache[n] = entry
                         setTimeout(() => delete resultCache[n], 1000 * 60 * 5)
-                        buttonRows.push(new MessageActionRow().addComponents(
-                            new MessageButton()
+                        buttonRows.push(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                            new ButtonBuilder()
                                 .setCustomId(`javadoc_select_${n}`)
                                 .setLabel(labelText(entry))
-                                .setStyle('PRIMARY')
-                        ))
+                                .setStyle(ButtonStyle.Primary)
+                        ).toJSON())
                     }
                     await interaction.editReply({
                         embeds: [dcu.embed('Select target', 'Your search term matched multiple targets. Select one.', IMAGE_URL)],
@@ -85,7 +93,7 @@ export function startJavadocQuery(client: DiscordClient, baseURL: string): void 
     })
 }
 
-async function sendFinalResult(result: SearchResultEntry, baseURL: string, send: (msg: MessageOptions) => Promise<unknown>): Promise<void> {
+async function sendFinalResult(result: SearchResultEntry, baseURL: string, send: (msg: InteractionUpdateOptions) => Promise<unknown>): Promise<void> {
     switch (result.type) {
         case "class":
             await send({
@@ -134,10 +142,10 @@ function shortText(result: SearchResultEntry): string {
     }
 }
 
-function createDocText(cls: JavaClass, baseURL: string, doc: Javadoc | undefined): [string, EmbedFieldData[]] {
+function createDocText(cls: JavaClass, baseURL: string, doc: Javadoc | undefined): [string, APIEmbedField[]] {
     if (doc != undefined) {
         const description = `\n${turndown.turndown(doc.text)}`
-        const fields: EmbedFieldData[] = []
+        const fields: APIEmbedField[] = []
         if (doc.properties != undefined) {
             for (const block of doc.properties) {
                 if ('cls' in block) {
@@ -159,10 +167,10 @@ function createDocText(cls: JavaClass, baseURL: string, doc: Javadoc | undefined
     }
 }
 
-function createMethodDocText(cls: JavaClass, baseURL: string, method: JavaExecutable): [string, EmbedFieldData[]] {
+function createMethodDocText(cls: JavaClass, baseURL: string, method: JavaExecutable): [string, APIEmbedField[]] {
     const [ docText, fields ] = createDocText(cls, baseURL, method.doc)
     if (method.doc != undefined) {
-        const paramFields: EmbedFieldData[] = []
+        const paramFields: APIEmbedField[] = []
         for (const param of method.parameters) {
             if (param.doc == undefined) {
                 paramFields.push({
@@ -186,7 +194,7 @@ function javadocLink(cls: JavaClass, baseURL: string): string {
     return `[Javadoc of ${cls.simpleName}](${url})`
 }
 
-function createClassEmbed(data: JavaClass, baseURL: string): MessageEmbed {
+function createClassEmbed(data: JavaClass, baseURL: string): APIEmbed {
     let description = `Name: \`${data.sourceName}\`\n`
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     if (data.superClass != undefined) description += `Extends: \`${data.superClass.signature}\`\n`
@@ -197,7 +205,7 @@ function createClassEmbed(data: JavaClass, baseURL: string): MessageEmbed {
     return dcu.embedList("Class " + data.simpleName, description, IMAGE_URL, fields)
 }
 
-function createFieldEmbed(data: JavaField, cls: JavaClass, baseURL: string): MessageEmbed {
+function createFieldEmbed(data: JavaField, cls: JavaClass, baseURL: string): APIEmbed {
     let description = `Name: \`${data.name}\`\n`
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.type.name}\`\n`
@@ -207,7 +215,7 @@ function createFieldEmbed(data: JavaField, cls: JavaClass, baseURL: string): Mes
     return dcu.embedList("Field " + cls.simpleName + "#" + data.name, description, IMAGE_URL, fields)
 }
 
-function createConstructorEmbed(data: JavaConstructor, cls: JavaClass, baseURL: string): MessageEmbed {
+function createConstructorEmbed(data: JavaConstructor, cls: JavaClass, baseURL: string): APIEmbed {
     let description = `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.typeId}\`\n`
     if (data.throws != undefined && data.throws.length > 0) description += `Throws: ${data.throws.map(v => `\`${v.name}\``).join(', ')}\n`
@@ -217,7 +225,7 @@ function createConstructorEmbed(data: JavaConstructor, cls: JavaClass, baseURL: 
 
 }
 
-function createMethodEmbed(data: JavaMethod, cls: JavaClass, baseURL: string): MessageEmbed {
+function createMethodEmbed(data: JavaMethod, cls: JavaClass, baseURL: string): APIEmbed {
     let description = `Name: \`${data.name}\`\n`
     description += `Modifiers: ${data.modifiers.map(m => `\`${m}\``).join(' ')}\n`
     description += `Type: \`${data.typeId}\`\n`

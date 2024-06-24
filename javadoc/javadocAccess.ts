@@ -238,7 +238,7 @@ export class JavadocAccess {
             const cached = this.indexCache
             if (cached != undefined) return cached
             const response = await fetch(this.baseUrl + 'index.json')
-            const data: MetaIndex = await response.json()
+            const data: MetaIndex = await response.json() as MetaIndex
             this.indexCache = data
             return data;
         } catch (err) {
@@ -253,7 +253,7 @@ export class JavadocAccess {
             if (cached != undefined) return cached
             if (this.classLookupFail.includes(cls)) return undefined
             const response = await fetch(this.baseUrl + cls)
-            const data: JavaClass = await response.json()
+            const data: JavaClass = await response.json() as JavaClass
             this.classCache[cls] = data
             return data;
         } catch (err) {

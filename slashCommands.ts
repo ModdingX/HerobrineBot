@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import {DiscordAuth} from "./discordbot/discordAuth";
 import {promisify} from "util";
+import { Routes } from 'discord.js';
 
 export async function reloadSlashCommands(auth: DiscordAuth, guild: string): Promise<boolean> {
     try {
@@ -16,9 +17,9 @@ export async function reloadSlashCommands(auth: DiscordAuth, guild: string): Pro
             commands.push(command.data.toJSON())
         }
 
-        // Internal stuff but it works.
-        // @ts-ignore
-        await auth.client.api.applications(auth.clientId).guilds(guild).commands.put({data: commands})
+        await auth.client.rest.put(Routes.applicationGuildCommands(auth.clientId, guild), {
+            body: commands
+        })
 
         console.log('Successfully reloaded application (/) commands.');
         return true

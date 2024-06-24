@@ -1,4 +1,4 @@
-import {Client as DiscordClient, Intents} from "discord.js";
+import {Client as DiscordClient, Partials} from "discord.js";
 
 export interface DiscordAuth {
     client: DiscordClient
@@ -13,14 +13,11 @@ export async function registerDiscord(): Promise<DiscordAuth> {
         throw new Error("No discord bot token provided");
     }
     const client = new DiscordClient({
-        partials: ["CHANNEL", "MESSAGE", "REACTION", "GUILD_MEMBER", "USER"],
-        intents: [
-            Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-            Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
-        ]
+        partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.GuildMember, Partials.User],
+        intents: ["GuildMessageReactions", "DirectMessageReactions"]
     });
     await client.login(process.env.DISCORD_TOKEN);
-    await client.user?.setStatus('online')
+    client.user?.setStatus('online')
     console.log("Connected to discord")
     
     return {

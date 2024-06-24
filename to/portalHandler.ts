@@ -6,7 +6,7 @@ import * as dcu from '../discordbot/discordUtil'
 
 export function startPortalHandler(client: DiscordClient): void {
     client.on('interactionCreate', async interaction => {
-        if (!interaction.isCommand()) return;
+        if (!interaction.isChatInputCommand()) return;
         if (interaction.commandName == 'to') {
             try {
                 const channelId = interaction.options.getChannel('channel')
