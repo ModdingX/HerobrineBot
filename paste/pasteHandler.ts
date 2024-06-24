@@ -44,6 +44,8 @@ export function startPasteHandler(client: DiscordClient): void {
               }
             })
             await interaction.editReply({
+              // angle brackets needed so discord won't try to create an embed which would cause the
+              // link to be called and delete the paste
               content: '**Delete paste:** <' + result.delete + '>'
             })
           }
