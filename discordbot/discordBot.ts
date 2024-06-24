@@ -9,7 +9,7 @@ import {startPasteHandler} from "../paste/pasteHandler";
 export async function startDiscordBot(discord: DiscordClient, config: BotConfig): Promise<void> {
     const guild: Guild = await discord.guilds.fetch(config.guild);
 
-    startJavadocQuery(discord, config.javadoc_url)
+    startJavadocQuery(discord, config.javadoc)
     startPortalHandler(discord)
     startPasteHandler(discord)
 

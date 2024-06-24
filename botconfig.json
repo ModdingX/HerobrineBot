@@ -1,6 +1,9 @@
 {
   "guild": "904773510088523787",
-  "javadoc_url": "https://moddingx.github.io/LibX",
+  "javadoc": {
+    "url": "https://moddingx.org/libx",
+    "icon": "https://media.forgecdn.net/avatars/307/587/637388930682019683.png"
+  },
   "role_channel": "904778891665760348",
   "role_message": "905192714516193341",
   "roles": {
