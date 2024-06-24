@@ -5,7 +5,10 @@ import * as dcu from '../discordbot/discordUtil'
 import {formatFile} from "./pasteFormatter";
 import {createPaste} from "./pasteApi";
 
-const ALLOWED_SUFFIXES = [ '.txt', '.log', '.cfg', '.json', '.json5', '.iml', '.xml', '.yml', '.yaml' ]
+const ALLOWED_SUFFIXES = [
+  '.txt', '.log', '.csv', '.md', '.cfg', '.json', '.json5', '.toml', '.yml', '.yaml', '.ini', '.conf', '.html', '.htm',
+  '.iml', '.xml', '.sh', '.bat', '.cmd', '.ps1'
+]
 
 export function startPasteHandler(client: DiscordClient): void {
   client.on('interactionCreate', async interaction => {
@@ -41,9 +44,7 @@ export function startPasteHandler(client: DiscordClient): void {
               }
             })
             await interaction.editReply({
-              // code block needed so discord won't try to create an embed which would cause the
-              // link to be called and delete the paste
-              content: '**Delete paste:** `' + result.delete + '`'
+              content: '**Delete paste:** <' + result.delete + '>'
             })
           }
         }
