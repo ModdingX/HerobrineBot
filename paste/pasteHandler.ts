@@ -1,4 +1,4 @@
-import {Client as DiscordClient, Message} from "discord.js";
+import {Client as DiscordClient, Message, TextChannel, ThreadChannel} from "discord.js";
 import fetch from "node-fetch";
 
 import * as dcu from '../discordbot/discordUtil'
@@ -15,7 +15,7 @@ export function startPasteHandler(client: DiscordClient): void {
     if (!interaction.isMessageContextMenuCommand()) return;
     if (interaction.commandName == 'Create_Paste') {
       try {
-        const channel = await dcu.tryTextChannel(client, interaction.channelId)
+        const channel = await dcu.tryAnyTextChannel(client, interaction.channelId)
         const msg = await channel?.messages?.fetch(interaction.targetMessage.id)
         if (channel == null || msg == null) {
           await dcu.sendError(interaction, 'Can\'t create paste: No message selected.')
@@ -33,21 +33,29 @@ export function startPasteHandler(client: DiscordClient): void {
             const text = await (await fetch(paste.url)).text()
             const formatted = formatFile(paste.fileName, text)
             const result = await createPaste(paste.fileName, formatted)
-            await channel.send({
-              content: `:page_facing_up: <${result.url}>`,
-              reply: {
-                messageReference: msg,
-                failIfNotExists: false
-              },
-              allowedMentions: {
-                repliedUser: false
-              }
-            })
-            await interaction.editReply({
-              // angle brackets needed so discord won't try to create an embed which would cause the
-              // link to be called and delete the paste
-              content: '**Delete paste:** <' + result.delete + '>'
-            })
+
+            if (await canSend(channel)) {
+              await channel.send({
+                content: `:page_facing_up: <${result.url}>`,
+                reply: {
+                  messageReference: msg,
+                  failIfNotExists: false
+                },
+                allowedMentions: {
+                  repliedUser: false
+                }
+              })
+              await interaction.editReply({
+                // angle brackets needed so discord won't try to create an embed which would cause the
+                // link to be called and delete the paste
+                content: '**Delete paste:** <' + result.delete + '>'
+              })
+            } else {
+              await interaction.editReply({
+                  content: `I can't send messages here. Here's your paste: <${result.url}>\n` +
+                      `**Delete paste**: <${result.delete}>`
+              });
+            }
           }
         }
       } catch (err) {
@@ -55,6 +63,19 @@ export function startPasteHandler(client: DiscordClient): void {
       }
     }
   })
+}
+
+async function canSend(channel: TextChannel | ThreadChannel): Promise<boolean> {
+  if (!channel.isThread()) {
+    return true;
+  }
+
+  channel = channel as ThreadChannel;
+  if (!channel.joined && channel.joinable) {
+    await channel.join();
+  }
+
+  return channel.joined;
 }
 
 function findTextToPaste(msg: Message): PasteText | 'too_large' | null {

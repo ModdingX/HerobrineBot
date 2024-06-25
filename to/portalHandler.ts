@@ -16,7 +16,7 @@ export function startPortalHandler(client: DiscordClient): void {
                     } else {
                         const fromChannel = interaction.channelId == null ? null : await dcu.tryTextChannel(client, interaction.channelId);
                         if (fromChannel != null) {
-                            const toChannel = await dcu.textChannel(client, channelId.id);
+                            const toChannel = await dcu.tryTextChannel(client, channelId.id);
                             if (toChannel == null) {
                                 await dcu.sendError(interaction, 'Can\'t redirect into that channel')
                             } else {
