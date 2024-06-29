@@ -1,5 +1,9 @@
 import {
-    Client as DiscordClient, CommandInteraction, TextChannel, Message
+    Client as DiscordClient, CommandInteraction, TextChannel, Message,
+    AnyThreadChannel,
+    ChannelType,
+    Snowflake,
+    Interaction
 } from "discord.js";
 
 import * as dcu from '../discordbot/discordUtil'
@@ -14,16 +18,27 @@ export function startPortalHandler(client: DiscordClient): void {
                     if (channelId.id == interaction.channelId) {
                         await dcu.sendError(interaction, 'You\'re already in that channel.')
                     } else {
-                        const fromChannel = interaction.channelId == null ? null : await dcu.tryTextChannel(client, interaction.channelId);
-                        if (fromChannel != null) {
-                            const toChannel = await dcu.tryTextChannel(client, channelId.id);
-                            if (toChannel == null) {
-                                await dcu.sendError(interaction, 'Can\'t redirect into that channel')
+                        const fromChannel = await dcu.channel(client, interaction.channelId as Snowflake | null, [ChannelType.GuildText, ChannelType.PublicThread]);
+                        if (fromChannel instanceof dcu.ChannelError) {
+                            if (fromChannel.type == dcu.ChannelErrorType.WrongType) {
+                                await dcu.sendError(interaction, 'You can\'t use this here.')
+                            } else {
+                                await dcu.sendError(interaction, 'Internal error.')
+                            }
+                        } else {
+                            const toChannel = await dcu.channel(client, channelId.id, [ChannelType.GuildText, ChannelType.PublicThread]);
+                            if (toChannel instanceof dcu.ChannelError) {
+                                if (toChannel.type == dcu.ChannelErrorType.WrongType) {
+                                    await dcu.sendError(interaction, 'I can\'t redirect into that channel')
+                                } else {
+                                    await dcu.sendError(interaction, 'I do not know this channel.')
+                                }
+                            } else if (!dcu.join(toChannel)) {
+                                await dcu.sendError(interaction, 'I can\'t join the target channel.')
+                                return
                             } else {
                                 await handleToCommand(client, interaction, fromChannel, toChannel)
                             }
-                        } else {
-                            await dcu.sendError(interaction, 'Internal error.')
                         }
                     }
                 } else {
@@ -36,25 +51,24 @@ export function startPortalHandler(client: DiscordClient): void {
     })
 }
 
-async function handleToCommand(client: DiscordClient, interaction: CommandInteraction, from: TextChannel, to: TextChannel) {
-    const messageId = await interaction.deferReply({
+async function handleToCommand(client: DiscordClient, interaction: CommandInteraction, from: TextChannel | AnyThreadChannel, to: TextChannel | AnyThreadChannel) {
+    const message = await interaction.deferReply({
         ephemeral: false,
         fetchReply: true
     })
-    const message = from.messages.resolve(messageId.id)
-    if (message == null) {
-        await interaction.deleteReply();
-        throw new Error('Reply message not found.')
-    } else {
+    if (message.inGuild()) {
         const otherMessage = await to.send({
-            embeds: [dcu.embed(null, `**From [#${from.name}](${messageLink(message)})**`, null)]
+            embeds: [dcu.embed(null, `**From ${messageLink(message)}**`, null)]
         })
         await interaction.editReply({
-            embeds: [dcu.embed(null, `**To [#${to.name}](${messageLink(otherMessage)})**`, null)]
+            embeds: [dcu.embed(null, `**To ${messageLink(otherMessage)}**`, null)]
         })
+    } else {
+        await interaction.deleteReply();
+        throw new Error('Reply message not found.')
     }
 }
 
-function messageLink(message: Message) {
-    return `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`
+function messageLink(message: Message<true>) {
+    return `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`
 }

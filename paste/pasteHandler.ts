@@ -1,4 +1,4 @@
-import {Client as DiscordClient, Message, TextChannel, ThreadChannel} from "discord.js";
+import {ChannelType, Client as DiscordClient, Message, Snowflake, TextChannel, ThreadChannel} from "discord.js";
 import fetch from "node-fetch";
 
 import * as dcu from '../discordbot/discordUtil'
@@ -15,9 +15,13 @@ export function startPasteHandler(client: DiscordClient): void {
     if (!interaction.isMessageContextMenuCommand()) return;
     if (interaction.commandName == 'Create_Paste') {
       try {
-        const channel = await dcu.tryAnyTextChannel(client, interaction.channelId)
-        const msg = await channel?.messages?.fetch(interaction.targetMessage.id)
-        if (channel == null || msg == null) {
+        const channel = await dcu.channel(client, interaction.channelId as Snowflake | null, [ChannelType.GuildText, ChannelType.PublicThread])
+        if (channel instanceof dcu.ChannelError) {
+          await dcu.sendError(interaction, 'Can\'t create paste: No message selected: ' + channel)
+          return
+        }
+        const msg = await channel.messages.fetch(interaction.targetMessage.id)
+        if (msg == null) {
           await dcu.sendError(interaction, 'Can\'t create paste: No message selected.')
         } else {
           const paste = findTextToPaste(msg)
@@ -25,6 +29,8 @@ export function startPasteHandler(client: DiscordClient): void {
             await dcu.sendError(interaction, 'Can\'t create paste: No suitable attachment found.')
           } else if (paste == 'too_large') {
             await dcu.sendError(interaction, 'Can\'t paste file: Too large')
+          } else if (!dcu.join(channel)) {
+            await dcu.sendError(interaction, 'I can\'t join here.')
           } else {
             await interaction.deferReply({
               ephemeral: true,
@@ -34,28 +40,21 @@ export function startPasteHandler(client: DiscordClient): void {
             const formatted = formatFile(paste.fileName, text)
             const result = await createPaste(paste.fileName, formatted)
 
-            if (await canSend(channel)) {
-              await channel.send({
-                content: `:page_facing_up: <${result.url}>`,
-                reply: {
-                  messageReference: msg,
-                  failIfNotExists: false
-                },
-                allowedMentions: {
-                  repliedUser: false
-                }
-              })
-              await interaction.editReply({
-                // angle brackets needed so discord won't try to create an embed which would cause the
-                // link to be called and delete the paste
-                content: '**Delete paste:** <' + result.delete + '>'
-              })
-            } else {
-              await interaction.editReply({
-                  content: `I can't send messages here. Here's your paste: <${result.url}>\n` +
-                      `**Delete paste**: <${result.delete}>`
-              });
-            }
+            await channel.send({
+              content: `:page_facing_up: <${result.url}>`,
+              reply: {
+                messageReference: msg,
+                failIfNotExists: false
+              },
+              allowedMentions: {
+                repliedUser: false
+              }
+            })
+            await interaction.editReply({
+              // angle brackets needed so discord won't try to create an embed which would cause the
+              // link to be called and delete the paste
+              content: '**Delete paste:** <' + result.delete + '>'
+            })
           }
         }
       } catch (err) {
@@ -63,19 +62,6 @@ export function startPasteHandler(client: DiscordClient): void {
       }
     }
   })
-}
-
-async function canSend(channel: TextChannel | ThreadChannel): Promise<boolean> {
-  if (!channel.isThread()) {
-    return true;
-  }
-
-  channel = channel as ThreadChannel;
-  if (!channel.joined && channel.joinable) {
-    await channel.join();
-  }
-
-  return channel.joined;
 }
 
 function findTextToPaste(msg: Message): PasteText | 'too_large' | null {

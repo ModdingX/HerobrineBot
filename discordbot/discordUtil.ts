@@ -1,53 +1,65 @@
-import {
-    APIEmbed,
-    APIEmbedField,
-    ChannelType,
-    Client as DiscordClient,
-    EmbedBuilder,
-    Interaction,
-    Snowflake,
-    TextChannel,
-    ThreadChannel
-} from "discord.js";
+import {APIEmbed, APIEmbedField, ChannelType, ThreadChannelType, Client as DiscordClient, EmbedBuilder, Interaction, Snowflake, Channel, TextChannel, ThreadChannel, VoiceChannel, NewsChannel, ForumChannel, StageChannel, DMChannel, PartialGroupDMChannel, AnyThreadChannel, PrivateThreadChannel, PublicThreadChannel} from "discord.js";
 
-export async function tryAnyTextChannel(discordClient: DiscordClient, id: Snowflake | undefined): Promise<TextChannel | ThreadChannel | null> {
-    try {
-        return await textChannel(discordClient, id);
-    } catch (err) {
-        return null;
+export enum ChannelErrorType {
+    NotProvided = 'notprovided', NotFound = 'notfound', WrongType = 'wrongtype'
+}
+export class ChannelError<Type extends ChannelErrorType> {
+    public readonly type: ChannelErrorType;
+    public readonly message: string;
+    constructor(type: Type, message: string | undefined = undefined) {
+        this.type = type;
+        this.message = message === undefined ? type : message
+    }
+    public toString(): string {
+        return this.message
+    }
+    public throw(): never {
+        throw new Error(this.message)
     }
 }
+type NotProvidedChannelError = ChannelError<ChannelErrorType.NotProvided>
+type AnyChannelError = ChannelError<ChannelErrorType.NotFound>
+type TypedChannelError = ChannelError<ChannelErrorType.NotFound | ChannelErrorType.WrongType>
 
-export async function tryTextChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<TextChannel | null> {
-  try {
-      const channel = await textChannel(discord, id);
-      return channel.isThread() ? null : channel as TextChannel;
-  } catch (err) {
-    return null;
-  }
-}
+type TypedChannel<Type extends ChannelType> =
+  Type extends ChannelType.GuildText ? TextChannel :
+  Type extends ChannelType.DM ? DMChannel :
+  Type extends ChannelType.GroupDM ? PartialGroupDMChannel :
+  Type extends ChannelType.GuildVoice ? VoiceChannel :
+  Type extends ChannelType.GuildAnnouncement ? NewsChannel :
+  Type extends ChannelType.GuildForum ? ForumChannel :
+  Type extends ChannelType.AnnouncementThread ? PublicThreadChannel<boolean> :
+  Type extends ChannelType.PublicThread ? PublicThreadChannel<boolean> :
+  Type extends ChannelType.PrivateThread ? PrivateThreadChannel :
+  Type extends ChannelType.GuildStageVoice ? StageChannel :
+  Channel
 
-export async function tryThreadChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<ThreadChannel | null> {
-    try {
-        const channel = await textChannel(discord, id);
-        return channel.isThread() ? channel as ThreadChannel : null;
-    } catch (err) {
-        return null;
-    }
-}
-
-export async function textChannel(discord: DiscordClient, id: Snowflake | undefined): Promise<TextChannel | ThreadChannel> {
-    if (id == undefined) {
-        throw new Error("No channel given")
+export async function channel(discord: DiscordClient, id: Snowflake): Promise<Channel | AnyChannelError>
+export async function channel<Type extends ChannelType>(discord: DiscordClient, id: Snowflake, type: Type): Promise<TypedChannel<Type> | TypedChannelError>
+export async function channel<Types extends ChannelType[]>(discord: DiscordClient, id: Snowflake, type: Types): Promise<TypedChannel<typeof type[number]> | TypedChannelError>
+export async function channel(discord: DiscordClient, id: Snowflake | undefined | null): Promise<Channel | AnyChannelError | NotProvidedChannelError>
+export async function channel<Type extends ChannelType>(discord: DiscordClient, id: Snowflake | undefined | null, type: Type): Promise<TypedChannel<Type> | TypedChannelError | NotProvidedChannelError>
+export async function channel<Types extends ChannelType[]>(discord: DiscordClient, id: Snowflake | undefined | null, type: Types): Promise<TypedChannel<typeof type[number]> | TypedChannelError | NotProvidedChannelError>
+export async function channel(discord: DiscordClient, id: Snowflake | undefined | null, type: ChannelType | [ChannelType] | undefined = undefined): Promise<Channel | ChannelError<ChannelErrorType>> {
+    if (id === undefined || id === null) {
+        return new ChannelError(ChannelErrorType.NotProvided, "No channel given.")
     }
     const channel = await discord.channels.fetch(id)
     if (channel == null) {
-        throw new Error("Discord channel not found: " + channel)
+        return new ChannelError(ChannelErrorType.NotFound, "Discord channel not found: " + id);
     }
-    if (channel.type != ChannelType.GuildText && channel.type != ChannelType.PublicThread) {
-        throw new Error('Discord channel is not a text/thread channel: ' + channel);
+    if (type !== undefined && (Array.isArray(type) ? !(type.includes(channel.type)) : channel.type != type)) {
+        return new ChannelError(ChannelErrorType.WrongType, "Discord channel is not of type " + type + ": " + id + " (" + channel.type + ")");
     }
-    return channel as TextChannel | ThreadChannel
+    return channel
+}
+
+export async function join(channel: Channel): Promise<boolean> {
+    if (channel.isThread() && channel.joinable && !channel.joined) {
+        return (await channel.join()).joined
+    } else {
+        return true;
+    }
 }
 
 export function embed(title: string | null, description: string | null, image: string | null): APIEmbed {

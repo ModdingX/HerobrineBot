@@ -6,7 +6,7 @@ export const data = new SlashCommandBuilder()
     .setDescription('Continue in another channel.')
     .addChannelOption(option =>
         option.setName('channel')
-            .addChannelTypes(ChannelType.GuildText)
+            .addChannelTypes(ChannelType.GuildText, ChannelType.PublicThread)
             .setDescription('Channel to continue in.')
             .setRequired(true)
     )
