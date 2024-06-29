@@ -23,8 +23,8 @@ export async function reloadSlashCommands(auth: DiscordAuth, guild: string): Pro
 
         console.log('Successfully reloaded application (/) commands.');
         return true
-	} catch (error) {
-		console.error(error);
+    } catch (error) {
+        console.error(error);
         return false
-	}
+    }
 }
