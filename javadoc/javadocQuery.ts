@@ -1,8 +1,8 @@
 import {
     APIActionRowComponent,
+    APIComponentInMessageActionRow,
     APIEmbed,
     APIEmbedField,
-    APIMessageActionRowComponent,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
@@ -21,7 +21,7 @@ export function startJavadocQuery(client: DiscordClient, config: JavadocConfig):
     const access = new JavadocAccess(config.url)
     let nextId = 0
     const resultCache: Record<number, SearchResultEntry> = {}
-    
+
     client.on('interactionCreate', async interaction => {
         if (!interaction.isChatInputCommand()) return;
         if (interaction.commandName == 'jd') {
@@ -46,7 +46,7 @@ export function startJavadocQuery(client: DiscordClient, config: JavadocConfig):
                 if (result.results.length == 1) {
                     await sendFinalResult(result.results[0], config, msg => interaction.editReply(msg))
                 } else {
-                    const buttonRows: APIActionRowComponent<APIMessageActionRowComponent>[] = []
+                    const buttonRows: APIActionRowComponent<APIComponentInMessageActionRow>[] = []
                     for (const entry of result.results) {
                         const n = nextId++
                         resultCache[n] = entry
